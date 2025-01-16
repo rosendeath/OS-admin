@@ -1,0 +1,5 @@
+Package: count-files
+Version: 1.0-1
+Architecture: amd64
+Maintainer: Illia Vasyliev <illia23@gmail.com>
+Description: Script to count files in the /etc directory, excluding directories and links.

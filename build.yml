@@ -1,0 +1,60 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Building rpm and deb
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-22.04
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      # Runs a set of commands using the runners shell
+      - name: Update and install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y rpm dpkg
+          
+      - name: Preparing before building rpm
+        run: |
+          mkdir -p ~/rpmbuild/{SOURCES,RPMS,SPECS,SRPMS,BUILD}
+          cp count_files.sh ~/rpmbuild/SOURCES/
+          cp count_files.spec ~/rpmbuild/SPECS/
+          
+      - name: Building rpm
+        run: rpmbuild -ba ~/rpmbuild/SPECS/count_files.spec
+           
+      - name: Preparing before building deb
+        run: |
+          mkdir -p ~/count-files_1.0_amd64/DEBIAN
+          mkdir -p ~/count-files_1.0_amd64/usr/local/bin
+          cp count_files.sh ~/count-files_1.0_amd64/usr/local/bin
+          cp control ~/count-files_1.0_amd64/DEBIAN
+
+      - name: Building deb
+        run: dpkg-deb --build ~/count-files_1.0_amd64/
+
+      - name: Uploading created packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: packages
+          path: |
+            ~/rpmbuild/SRPMS/
+            ~/rpmbuild/RPMS/
+            ~/count-files_1.0_amd64.deb
